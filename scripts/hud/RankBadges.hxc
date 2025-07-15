@@ -1,0 +1,170 @@
+import funkin.modding.module.Module;
+import funkin.play.PlayState;
+import funkin.Highscore;
+import funkin.play.scoring.Scoring;
+import flixel.FlxSprite;
+
+class RankBadges extends Module {
+	public function new() {
+		super('RankBadges');
+	}
+
+	public var badge:FlxSprite;
+	public var scoreRank:ScoringRank;
+
+	/**
+	 * Initalize
+	 */
+	public function onCountdownStart(event:CountdownScriptEvent) {
+                PlayState.instance.remove(badge);
+                
+		badge = new FlxSprite();
+		badge.frames = Paths.getSparrowAtlas('freeplay/rankbadges');
+
+		badge.scrollFactor.set();
+		badge.scale.set(2, 2);
+
+		badge.screenCenter();
+		badge.y = PlayState.instance.playerStrumline.members[0].y + badge.height + 32;
+		badge.x -= badge.width;
+
+		badge.cameras = [PlayState.instance.camHUD];
+
+		PlayState.instance.add(badge);
+
+		badge.animation.addByPrefix('PERFECT', 'PERFECT rank0', 24, false);
+		badge.animation.addByPrefix('EXCELLENT', 'EXCELLENT rank0', 24, false);
+		badge.animation.addByPrefix('GOOD', 'GOOD rank0', 24, false);
+		badge.animation.addByPrefix('PERFECTSICK', 'PERFECT rank GOLD', 24, false);
+		badge.animation.addByPrefix('GREAT', 'GREAT rank0', 24, false);
+		badge.animation.addByPrefix('LOSS', 'LOSS rank0', 24, false);
+
+		badge.animation.play('LOSS');
+                totalNotes = 0;
+	}
+
+	public var scoreRankToBadge:Map<String, String> = [
+		'SHIT' => 'LOSS',
+		'GOOD' => 'GOOD',
+		'GREAT' => 'GREAT',
+		'EXCELLENT' => 'EXCELLENT',
+		'PERFECT' => 'PERFECT',
+		'PERFECT_GOLD' => 'PERFECTSICK',
+	];
+
+	public var sick:Int = 0;
+	public var good:Int = 0;
+	public var bad:Int = 0;
+	public var shit:Int = 0;
+	public var missed:Int = 0;
+	public var combo:Int = 0;
+	public var maxCombo:Int = 0;
+	public var totalNotesHit:Int = 0;
+	public var totalNotes:Int = 0;
+
+	var displayRankBadge:Bool = false;
+
+	public function onStateChangeEnd(event:StateChangeScriptEvent) {
+		displayRankBadge = false;
+
+		if (Std.isOfType(event.targetState, PlayState)) {
+                        displayRankBadge = true;
+		}
+	}
+
+	public function onBeatHit(event:SongTimeScriptEvent) {
+		if (!displayRankBadge)
+			return;
+
+                var tallers = {
+				sick: sick,
+				good: good,
+				bad: bad,
+				shit: shit,
+				missed: missed,
+				combo: combo,
+				maxCombo: maxCombo,
+				totalNotesHit: totalNotesHit,
+				totalNotes: totalNotes,
+			};
+                trace(tallers);
+
+		scoreRank = Scoring.calculateRank({
+			score: PlayState.instance.songScore,
+			tallies: tallers
+		});
+		trace(scoreRank);
+
+		badge.animation.play(scoreRankToBadge.get(scoreRank));
+	}
+
+        public function onSongLoaded(event:SongLoadScriptEvent) {
+                // getStrumlineIndex() == 0 then player
+
+                sick = 0;
+                good = 0;
+                bad = 0;
+                shit = 0;
+                missed = 0;
+                combo = 0;
+                maxCombo = 0;
+                totalNotesHit = 0;
+                totalNotes = 0;
+
+                var builtNoteData = event.notes;
+
+                for (songNote in builtNoteData)
+                {
+                        var startTime = 0;
+
+                        var strumTime:Float = songNote.time;
+                        if (strumTime < startTime) continue; // Skip notes that are before the start time.
+
+                        var noteData:Int = songNote.getDirection();
+                        var playerNote:Bool = true;
+
+                        if (noteData > 3) playerNote = false;
+
+                        switch (songNote.getStrumlineIndex())
+                        {
+                                case 0:
+                                        totalNotes++;
+                                        trace(totalNotes + ' player notes');
+                        }
+                }
+        }
+
+	public function onNoteHit(event:HitNoteScriptEvent) {
+		trace(event.score);
+                if (event.score <= 0) return;
+                totalNotes++;
+
+		if (event.judgement != 'miss') {
+                        combo++;
+                        totalNotesHit++;
+                } else {
+                        missed++;
+                        combo = 0;
+                }
+
+                if (combo > maxCombo) maxCombo = combo;
+
+		if (event.judgement == 'sick' || event.judgement == 'perfect') {
+			sick++;
+		} else if (event.judgement == 'good') {
+			good++;
+		} else if (event.judgement == 'bad') {
+			bad++;
+		} else if (event.judgement == 'shit') {
+			shit++;
+		}
+	}
+
+	/**
+	 * Remove
+	 */
+	public function onGameOver(event:ScriptEvent)
+        {
+
+        }
+}
