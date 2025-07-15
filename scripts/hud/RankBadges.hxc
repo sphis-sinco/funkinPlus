@@ -1,4 +1,5 @@
 import funkin.modding.module.Module;
+import funkin.modding.module.ModuleHandler;
 import funkin.play.PlayState;
 import funkin.Highscore;
 import funkin.play.scoring.Scoring;
@@ -9,18 +10,38 @@ class RankBadges extends Module {
 		super('RankBadges');
 	}
 
-        public var settings = {
-                traces: false
-        };
+	public var settings = {
+		traces: false,
+		preference_value: true
+	};
+
+	public var preference:Module;
 
 	public var badge:FlxSprite;
 	public var scoreRank:ScoringRank;
+
+	override function getPreferences(state:OptionsState):Array<PreferencesData> {
+		return [
+			{
+				name: "Rank badges",
+				description: "When enabled, a rank badge will appear inbetween the player and opponent strumlines displaying your current rank.",
+				type: "checkbox",
+				callback: function(value:Bool) {
+					settings.preference_value = value;
+					trace(
+						'Preference change: '+settings.preference_value
+					);
+				},
+				defaultValue: true
+			}
+		];
+	}
 
 	/**
 	 * Initalize
 	 */
 	public function onCountdownStart(event:CountdownScriptEvent) {
-                PlayState.instance.remove(badge);
+		PlayState.instance.remove(badge);
 
 		badge = new FlxSprite();
 		badge.frames = Paths.getSparrowAtlas('freeplay/rankbadges');
@@ -34,7 +55,7 @@ class RankBadges extends Module {
 
 		badge.cameras = [PlayState.instance.camHUD];
 
-		PlayState.instance.add(badge);
+		if (displayRankBadge) PlayState.instance.add(badge);
 
 		badge.animation.addByPrefix('PERFECT', 'PERFECT rank0', 24, false);
 		badge.animation.addByPrefix('EXCELLENT', 'EXCELLENT rank0', 24, false);
@@ -44,7 +65,7 @@ class RankBadges extends Module {
 		badge.animation.addByPrefix('LOSS', 'LOSS rank0', 24, false);
 
 		badge.animation.play('LOSS');
-                totalNotes = 0;
+		totalNotes = 0;
 	}
 
 	public var scoreRankToBadge:Map<String, String> = [
@@ -72,7 +93,7 @@ class RankBadges extends Module {
 		displayRankBadge = false;
 
 		if (Std.isOfType(event.targetState, PlayState)) {
-                        displayRankBadge = true;
+			displayRankBadge = settings.preference_value;
 		}
 	}
 
@@ -80,78 +101,84 @@ class RankBadges extends Module {
 		if (!displayRankBadge)
 			return;
 
-                var tallers = {
-				sick: sick,
-				good: good,
-				bad: bad,
-				shit: shit,
-				missed: missed,
-				combo: combo,
-				maxCombo: maxCombo,
-				totalNotesHit: totalNotesHit,
-				totalNotes: totalNotes,
-			};
-                if (settings.traces) trace(tallers);
+		var tallers = {
+			sick: sick,
+			good: good,
+			bad: bad,
+			shit: shit,
+			missed: missed,
+			combo: combo,
+			maxCombo: maxCombo,
+			totalNotesHit: totalNotesHit,
+			totalNotes: totalNotes,
+		};
+		if (settings.traces)
+			trace(tallers);
 
 		scoreRank = Scoring.calculateRank({
 			score: PlayState.instance.songScore,
 			tallies: tallers
 		});
-		if (settings.traces) trace(scoreRank);
+		if (settings.traces)
+			trace(scoreRank);
 
 		badge.animation.play(scoreRankToBadge.get(scoreRank));
 	}
 
-        public function onSongLoaded(event:SongLoadScriptEvent) {
-                // getStrumlineIndex() == 0 then player
+	public function onSongLoaded(event:SongLoadScriptEvent) {
+		// getStrumlineIndex() == 0 then player
 
-                sick = 0;
-                good = 0;
-                bad = 0;
-                shit = 0;
-                missed = 0;
-                combo = 0;
-                maxCombo = 0;
-                totalNotesHit = 0;
-                totalNotes = 0;
+		sick = 0;
+		good = 0;
+		bad = 0;
+		shit = 0;
+		missed = 0;
+		combo = 0;
+		maxCombo = 0;
+		totalNotesHit = 0;
+		totalNotes = 0;
 
-                var builtNoteData = event.notes;
+		var builtNoteData = event.notes;
 
-                for (songNote in builtNoteData)
-                {
-                        var startTime = 0;
+		for (songNote in builtNoteData) {
+			var startTime = 0;
 
-                        var strumTime:Float = songNote.time;
-                        if (strumTime < startTime) continue; // Skip notes that are before the start time.
+			var strumTime:Float = songNote.time;
+			if (strumTime < startTime)
+				continue; // Skip notes that are before the start time.
 
-                        var noteData:Int = songNote.getDirection();
-                        var playerNote:Bool = true;
+			var noteData:Int = songNote.getDirection();
+			var playerNote:Bool = true;
 
-                        if (noteData > 3) playerNote = false;
+			if (noteData > 3)
+				playerNote = false;
 
-                        switch (songNote.getStrumlineIndex())
-                        {
-                                case 0:
-                                        totalNotes++;
-                                        if (settings.traces) trace(totalNotes + ' player notes');
-                        }
-                }
-        }
+			switch (songNote.getStrumlineIndex()) {
+				case 0:
+					totalNotes++;
+					if (settings.traces)
+						trace(totalNotes + ' player notes');
+			}
+		}
+	}
 
 	public function onNoteHit(event:HitNoteScriptEvent) {
-		if (settings.traces) trace(event.score);
-                if (event.score <= 0) return;
-                totalNotes++;
+		if (settings.traces)
+			trace(event.score);
+		if (event.score <= 0)
+			return;
+		totalNotes++;
 
 		if (event.judgement != 'miss') {
-                        combo++;
-                        totalNotesHit++;
-                } else {
-                        missed++;
-                        combo = 0;
-                }
+			combo++;
+			totalNotesHit++;
+		} else {
+			missed++;
+			combo = 0;
+		}
 
-                if (combo > maxCombo) maxCombo = combo;
+		if (combo > maxCombo)
+			maxCombo = combo;
 
 		if (event.judgement == 'sick' || event.judgement == 'perfect') {
 			sick++;
@@ -167,8 +194,5 @@ class RankBadges extends Module {
 	/**
 	 * Remove
 	 */
-	public function onGameOver(event:ScriptEvent)
-        {
-
-        }
+	public function onGameOver(event:ScriptEvent) {}
 }

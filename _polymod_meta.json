@@ -1,8 +1,14 @@
 {
-    "title": "Funkin Plus",
-    "description": "Friday Night Funkin with enhanced and extra content.",
-    "author": "Sphis_Sinco",
-    "api_version": "0.6.4",
-    "mod_version": "1.0.0",
-    "license": "CC BY 4.0,MIT"
+        "title": "Funkin Plus",
+        "description": "Friday Night Funkin with enhanced and extra content.",
+        "contributors": [
+                { "name": "Sphis_Sinco", "role": "Funkin plus mod" },
+                { "name": "AbnormalPoof", "role": "Options+ mod" }
+        ],
+        "api_version": "0.6.4",
+        "mod_version": "1.0.0",
+        "license": "CC BY 4.0,MIT",
+        "dependencies": {
+                "[V-Slice] Options+": ">=1.0.0"
+        }
 }
