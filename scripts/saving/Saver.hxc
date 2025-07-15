@@ -1,0 +1,36 @@
+import funkin.modding.module.Module;
+import haxe.Unserializer;
+
+class Saver extends Module {
+        var fileSystem:Dynamic;
+        var file:Dynamic;
+
+        var savePath = 'mods/funkinPlus/saveData/';
+
+        public function new() {
+                super('saver');
+                
+                fileSystem = Unserializer.DEFAULT_RESOLVER.resolveClass('sys.FileSystem');
+                file = Unserializer.DEFAULT_RESOLVER.resolveClass('sys.io.File');
+        }
+
+        public function saveFile(path:String, content:String) {
+                if (!fileSystem.exists(savePath+path)) {
+                        file.write(savePath+path);
+                }
+
+                file.saveContent(savePath+path, content);
+        }
+
+        public function getFile(path:String) {
+                if (getFileExistance(path)) {
+                        trace('found file: "'+savePath+path+'"');
+
+                        return file.getContent(savePath.path);
+                }
+        }
+
+        public function getFileExistance(path:String) {
+                return fileSystem.exists(savePath+path);
+        }
+}

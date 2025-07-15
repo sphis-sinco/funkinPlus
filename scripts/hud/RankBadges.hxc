@@ -10,12 +10,25 @@ class RankBadges extends Module {
 		super('RankBadges');
 	}
 
+	override public function create(event:ScriptEvent) {
+		if (!saveClass.scriptCall('getFileExistance', [saveName])) {
+			saveClass.scriptCall('saveFile', [saveName, 'true']);
+		} else {
+			var savedData = saveClass.scriptCall('getFile', [saveName]);
+
+			settings.preference_value = true;
+			if (saveData == 'false')
+				settings.preference_value = false;
+		}
+	}
+
 	public var settings = {
 		traces: false,
 		preference_value: true
 	};
 
-	public var preference:Module;
+	public var saveName:String = 'RankBadges.fps'; // funkin plus save
+	public var saveClass:Module = ModuleHandler.getModule('saver');
 
 	public var badge:FlxSprite;
 	public var scoreRank:ScoringRank;
@@ -28,11 +41,10 @@ class RankBadges extends Module {
 				type: "checkbox",
 				callback: function(value:Bool) {
 					settings.preference_value = value;
-					trace(
-						'Preference change: '+settings.preference_value
-					);
+					trace('Preference change: ' + settings.preference_value);
+					saveClass.scriptCall('saveFile', [saveName, 'true']);
 				},
-				defaultValue: true
+				defaultValue: settings.preference_value
 			}
 		];
 	}
@@ -55,7 +67,8 @@ class RankBadges extends Module {
 
 		badge.cameras = [PlayState.instance.camHUD];
 
-		if (displayRankBadge) PlayState.instance.add(badge);
+		if (displayRankBadge)
+			PlayState.instance.add(badge);
 
 		badge.animation.addByPrefix('PERFECT', 'PERFECT rank0', 24, false);
 		badge.animation.addByPrefix('EXCELLENT', 'EXCELLENT rank0', 24, false);
