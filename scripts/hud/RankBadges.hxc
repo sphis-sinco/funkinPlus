@@ -9,6 +9,10 @@ class RankBadges extends Module {
 		super('RankBadges');
 	}
 
+        public var settings = {
+                traces: false
+        };
+
 	public var badge:FlxSprite;
 	public var scoreRank:ScoringRank;
 
@@ -17,7 +21,7 @@ class RankBadges extends Module {
 	 */
 	public function onCountdownStart(event:CountdownScriptEvent) {
                 PlayState.instance.remove(badge);
-                
+
 		badge = new FlxSprite();
 		badge.frames = Paths.getSparrowAtlas('freeplay/rankbadges');
 
@@ -87,13 +91,13 @@ class RankBadges extends Module {
 				totalNotesHit: totalNotesHit,
 				totalNotes: totalNotes,
 			};
-                trace(tallers);
+                if (settings.traces) trace(tallers);
 
 		scoreRank = Scoring.calculateRank({
 			score: PlayState.instance.songScore,
 			tallies: tallers
 		});
-		trace(scoreRank);
+		if (settings.traces) trace(scoreRank);
 
 		badge.animation.play(scoreRankToBadge.get(scoreRank));
 	}
@@ -129,13 +133,13 @@ class RankBadges extends Module {
                         {
                                 case 0:
                                         totalNotes++;
-                                        trace(totalNotes + ' player notes');
+                                        if (settings.traces) trace(totalNotes + ' player notes');
                         }
                 }
         }
 
 	public function onNoteHit(event:HitNoteScriptEvent) {
-		trace(event.score);
+		if (settings.traces) trace(event.score);
                 if (event.score <= 0) return;
                 totalNotes++;
 
